@@ -76,24 +76,25 @@ app.post('/signup', (req, res) => {
     //    dateModified: new Date().toISOString() 
     };
 
-    main.doc(`/userList/${newUser.userName}`).get()
+    firebase.auth().createUserWithEmailAndPassword(newUser.email_address, newUser.password)
+        .then(data => {
+            return res.status(201).json({ message: `User ${data.user.uid} Signed up Successfully.`})
+        })
+ /*   main.doc(`/userList/${newUser.userName}`).get()
         .then(doc => {
             if(doc.exists){
                 return res.status(400).json({ userName: `Prefered userName already taken.`});
             } else {
-                firebase
-                .auth()
-                .createUserWithEmailAndPassword(newUser.email_address, newUser.password);
+                firebase.auth().createUserWithEmailAndPassword(newUser.email_address, newUser.password);
             }
         })
         .then(data => {
-           // return data.userList.getIdToken();
-           console.log(data);
+            return data.user.getIdToken();
         })
         .then(token => {
             return res.status(201).json({ token });
             //.json({ message: `User ${data.user.uid} Signed up Successfully.`})       
-        })
+        })*/
         .catch(err => {
             console.error(err);
             return res.status(500).json({ error: err.code });
