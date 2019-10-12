@@ -76,29 +76,55 @@ app.post('/signup', (req, res) => {
     //    dateModified: new Date().toISOString() 
     };
 
-    firebase.auth().createUserWithEmailAndPassword(newUser.email_address, newUser.password)
+    /*firebase.auth().createUserWithEmailAndPassword(newUser.email_address, newUser.password)
         .then(data => {
             return res.status(201).json({ message: `User ${data.user.uid} Signed up Successfully.`})
-        })
- /*   main.doc(`/userList/${newUser.userName}`).get()
+        })*/
+    
+    let token, userKey;
+
+      main.doc(`/userList/${newUser.userName}`).get()
         .then(doc => {
             if(doc.exists){
                 return res.status(400).json({ userName: `Prefered userName already taken.`});
-            } else {
-                firebase.auth().createUserWithEmailAndPassword(newUser.email_address, newUser.password);
+            } else { 
+                return firebase
+                .auth()
+                .createUserWithEmailAndPassword(newUser.email_address, newUser.password);
             }
         })
         .then(data => {
+            userKey = data.user.uid;
             return data.user.getIdToken();
         })
-        .then(token => {
+        .then(idToken => {
+            token = idToken;
+            const userCredentials = {
+                userName: newUser.userName,
+                first_name: newUser.first_name,
+                last_name: newUser.last_name,
+                password: newUser.password,
+                confirmPassword: newUser.confirmPassword,
+                contact_number: newUser.contact_number,
+                email_address: newUser.email_address,
+                userKey,
+                dateCreated: new Date().toISOString(),
+                dateModified: new Date().toISOString()
+            };
+            return main.doc(`/userList/${newUser.userName}`).set(userCredentials);
+           // return res.status(201).json({ token });
+        })
+        .then(() => {
             return res.status(201).json({ token });
-            //.json({ message: `User ${data.user.uid} Signed up Successfully.`})       
-        })*/
+        })
         .catch(err => {
             console.error(err);
+            if(err.code === 'auth/email-already-in-use'){
+                return res.status(400).json({ error: 'Email Already in Use'})
+            } else {
             return res.status(500).json({ error: err.code });
-        });
+            }
+        })
 });
 
 exports.api = functions.region('asia-east2').https.onRequest(app);
