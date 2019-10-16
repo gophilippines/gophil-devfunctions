@@ -49,21 +49,49 @@ const isEmpty = (string) => {
     else return false;
 }
 
+const FBAuth = (req, res, next) => {
+    let idToken;
+    if(req.headers.authorization && req.headers.authorization.startsWith('Bearer: ')){
+        idToken = req.headers.authorization.split('Bearer: ')[1];
+    } else {
+        console.error('No Token Found')
+        return res.status(403).json({ Error: 'Unauthorized'});
+    }
+
+    admin.auth().verifyIdToken(idToken)
+         .then(decodedToken => {
+             req.user = decodedToken;
+             console.log(decodedToken);
+             return main.collection('userList')
+                        .where('userKey', '==', req.user.uid)
+                        .limit(1)
+                        .get();
+         })
+         .then(data => {
+             req.user.userName = data.docs[0].data().userName;
+             return next();
+         })
+         .catch(err => {
+             console.error('Error on Token ', err);
+             return res.status(403).json(err);
+         })
+}
+
 //Pass Data for Collection
-app.post('/users', (req, res) => {
-    const createUser = {
-        first_name: req.body.first_name,
-        last_name: req.body.last_name,
-        password: req.body.password,
-        contact_number: req.body.contact_number,
-        email_address: req.body.email_address,
+app.post('/userReview', FBAuth, (req, res) => {
+    if(req.body.review.trim() === '') {
+        return res.status(400).json({ Review : 'Review must not be empty.'});
+    }
+
+    const createReview = {
+        review: req.body.review,
+        userName: req.user.userName,
         dateCreated: new Date().toISOString(),
-        dateModified: new Date().toISOString()
     };
 
     main
-         .collection('users')
-         .add(createUser)
+         .collection('userReview')
+         .add(createReview)
          .then(doc => {
             res.json({ message: `New ${doc.id} successfully added` });
          })
