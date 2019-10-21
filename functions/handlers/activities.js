@@ -42,7 +42,7 @@ exports.addActivity = (req, res) => {
         details: req.body.details,
         name: req.body.name,
         price: req.body.price,
-        username: req.user.username,
+        createdBy: req.user.username,
         dateCreated: new Date().toISOString(),
     };
 
@@ -71,14 +71,14 @@ exports.updateActivity = (req, res) => {
     if(req.body.address.trim() === '') {
         return res.status(400).json({ Activiy : 'Address must not be empty.'});
     }
-    
+
     const updatedActivity = {
         id: req.body.id,
         address: req.body.address,
         details: req.body.details,
         name: req.body.name,
         price: req.body.price,
-        username: req.user.username,
+        updatedBy: req.user.username,
         dateModified: new Date().toISOString(),
     };
     let sid = req.body.id;
@@ -99,15 +99,16 @@ exports.updateActivity = (req, res) => {
 }
 
 exports.showAActivities = (req, res) => {
-    main
-        .collection('activity').where('name', '==', 'Boat').get()
-        .then(snapshot => {
-             if(snapshot.empty){
-                 return res.status(404).json({ Name: 'Not Found'});
-             }
 
+    if(!req.query.id)
+    {
+        main
+        .collection('activity')
+        .orderBy('dateCreated', 'desc')
+        .get()
+        .then(data => {
              let activityData = [];
-             snapshot.forEach(doc => {
+             data.forEach(doc => {
                  activityData.push({
                     id: doc.id,
                     ...doc.data()
@@ -115,5 +116,24 @@ exports.showAActivities = (req, res) => {
              });
              return res.json(activityData);
         })
+    } else {
+
+        main
+            .collection('activity').where('id', '==', req.query.id).get()
+            .then(snapshot => {
+                 if(snapshot.empty){
+                    return res.status(404).json({ ID: 'Not Found'});
+                }
+
+                let activityData = [];
+                snapshot.forEach(doc => {
+                    activityData.push({
+                       id: `${req.query.id}`,
+                       ...doc.data()
+                    });
+                });
+                return res.json(activityData);
+        })
         .catch((err) => console.error());
+    }
 }
