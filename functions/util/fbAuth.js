@@ -1,4 +1,4 @@
-const { main } = require('./admin');
+const { admin, main } = require('./admin');
 
 module.exports = (req, res, next) => {
     let idToken;
@@ -19,7 +19,7 @@ module.exports = (req, res, next) => {
                         .get();
          })
          .then(data => {
-             req.user.userName = data.docs[0].data().userName;
+             req.user.username = data.docs[0].data().username;
              return next();
          })
          .catch(err => {

@@ -7,7 +7,7 @@ exports.postReview = (req, res) => {
 
     const createReview = {
         review: req.body.review,
-        userName: req.user.userName,
+        username: req.user.username,
         dateCreated: new Date().toISOString(),
     };
 
