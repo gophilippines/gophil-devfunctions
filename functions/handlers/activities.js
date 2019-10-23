@@ -1,10 +1,5 @@
 const { main } = require('../util/admin');
 
-/*const config = require('../util/config');
-
-const firebase = require('firebase');
-firebase.initializeApp(config); */
-
 exports.showActivities = (req, res) => {
     main
         .collection('activity')
@@ -44,6 +39,7 @@ exports.addActivity = (req, res) => {
         price: req.body.price,
         createdBy: req.user.username,
         dateCreated: new Date().toISOString(),
+        recommended: false
     };
 
     main
@@ -79,7 +75,8 @@ exports.updateActivity = (req, res) => {
         name: req.body.name,
         price: req.body.price,
         updatedBy: req.user.username,
-        dateModified: new Date().toISOString(),
+        recommended: Boolean(req.body.recommended),
+        dateModified: new Date().toISOString()
     };
     let sid = req.body.id;
 
@@ -136,4 +133,24 @@ exports.showAActivities = (req, res) => {
         })
         .catch((err) => console.error());
     }
+}
+
+exports.showRecommended = (req, res) => {
+        main
+            .collection('activity').where('recommended', '==', true).get()
+            .then(snapshot => {
+                 if(snapshot.empty){
+                    return res.status(404).json({ ID: 'No Recommended Activity Available'});
+                }
+
+                let activityData = [];
+                snapshot.forEach(doc => {
+                    activityData.push({
+                       id: `${req.query.id}`,
+                       ...doc.data()
+                    });
+                });
+                return res.json(activityData);
+        })
+        .catch((err) => console.error());
 }
