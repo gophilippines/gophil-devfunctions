@@ -4,8 +4,8 @@ const app = require('express') ();
 
 const { postReview } = require('./handlers/reviews');
 const { showUserList, signUp, logIn, uploadImage } = require('./handlers/users');
-const { addActivity, showActivities, updateActivity, showAActivities, showRecommended } = require('./handlers/activities');
-const { addCity, showCity, updateCity } = require('./handlers/cities');
+const { addActivity, showActivities, updateActivity, showActivitiesbyID, showRecommended, uploadActivityImage, showActivitiesbyCityID } = require('./handlers/activities');
+const { addCity, showCityDetails, showCityList, updateCity } = require('./handlers/cities');
 
 const FBAuth = require('./util/fbAuth');
 
@@ -16,21 +16,22 @@ app.post('/login', logIn );
 app.post('/user/image', FBAuth, uploadImage);
 
 //Show All Activities Available
-app.get('/activity', showAActivities);
-app.get('/activitylist', FBAuth, showAActivities);
-app.get('/recommended', showRecommended);
-app.post('/activity', FBAuth, addActivity);
-app.put('/activity', FBAuth, updateActivity);
+app.get('/activityById', showActivitiesbyID);
+app.get('/activityByCityDd', showActivitiesbyCityID);
+app.get('/activityList', showActivitiesbyID);
+app.get('/activityByRecommended', showRecommended);
+app.post('/addActivity', FBAuth, addActivity);
+app.put('/updateActivity', FBAuth, updateActivity);
+app.post('/activity/image', FBAuth, uploadActivityImage);
 
 //City Functions
-app.get('/city', showCity);
-app.post('/city', FBAuth, addCity);
-app.put('/city', FBAuth, updateCity);
+app.get('/cityById', showCityDetails);
+app.get('/cityList', showCityList);
+app.post('/addCity', FBAuth, addCity);
+app.put('/updateCity', FBAuth, updateCity);
 
 //Post/Add user review on the data base
 app.post('/userReview', FBAuth, postReview);
-
-//Signup Users
 
 
 exports.api = functions.region('asia-east2').https.onRequest(app);

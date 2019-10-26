@@ -43,3 +43,14 @@ exports.validateLoginData = (data) => {
         valid: Object.keys(errors).length === 0 ? true : false
     }
 }
+
+exports.validateCityID = (data) => {
+    let errors = {};
+
+    if(isEmpty(data.city_id)) errors.city_id = 'City ID Required';
+
+    return {
+        errors, 
+        valid: Object.keys(errors).length === 0 ? true : false
+    }
+}

@@ -2,13 +2,13 @@ const { main } = require('../util/admin');
 
 exports.addCity = (req, res) => {
     if(req.body.name.trim() === '') {
-        return res.status(400).json({ City : 'Name must not be empty.'});
+        return res.status(400).json({ city : 'Name must not be empty.'});
     }
     if(req.body.details.trim() === '') {
-        return res.status(400).json({ City : 'Details must not be empty.'});
+        return res.status(400).json({ city : 'Details must not be empty.'});
     }
     if(req.body.location.trim() === '') {
-        return res.status(400).json({ City : 'Location must not be empty.'});
+        return res.status(400).json({ city : 'Location must not be empty.'});
     }
 
     let id;
@@ -28,7 +28,7 @@ exports.addCity = (req, res) => {
          .add(createCity)
          .then(doc => {
             id = `${doc.id}`;
-            res.json({ message: `New ${doc.id} successfully added` });
+            res.json({ message: `${doc.id} City successfully added` });
             return main.doc(`/city/${doc.id}`).update({ id });
             })
          .catch(err => {
@@ -40,13 +40,13 @@ exports.addCity = (req, res) => {
 exports.updateCity = (req, res) => {
     
     if(req.body.name.trim() === '') {
-        return res.status(400).json({ City : 'Name must not be empty.'});
+        return res.status(400).json({ city : 'Name must not be empty.'});
     }
     if(req.body.details.trim() === '') {
-        return res.status(400).json({ City : 'Details must not be empty.'});
+        return res.status(400).json({ city : 'Details must not be empty.'});
     }
     if(req.body.address.trim() === '') {
-        return res.status(400).json({ City : 'Address must not be empty.'});
+        return res.status(400).json({ city : 'Address must not be empty.'});
     }
 
     const updatedcity = {
@@ -73,7 +73,7 @@ exports.updateCity = (req, res) => {
          })
 }
 
-exports.showCity = (req, res) => {
+exports.showCityDetails = (req, res) => {
 
     if(!req.query.id)
     {
@@ -85,25 +85,22 @@ exports.showCity = (req, res) => {
              let cityData = [];
              data.forEach(doc => {
                  cityData.push({
-                    cityID: doc.id,
                     ...doc.data()
                  });
              });
              return res.json(cityData);
         })
     } else {
-
         main
             .collection('city').where('id', '==', req.query.id).get()
             .then(snapshot => {
                  if(snapshot.empty){
-                    return res.status(404).json({ ID: 'Not Found'});
+                    return res.status(404).json({ id: 'Not Found'});
                 }
 
                 let cityData = [];
                 snapshot.forEach(doc => {
                     cityData.push({
-                       id: `${req.query.id}`,
                        ...doc.data()
                     });
                 });
@@ -111,4 +108,20 @@ exports.showCity = (req, res) => {
         })
         .catch((err) => console.error());
     }
+}
+
+exports.showCityList = (req, res) => {
+    main
+            .collection('city').get()
+            .then(data => {
+                 if(data.empty){
+                    return res.status(404).json({ id: 'Not Found'});
+                   }
+                let cityList = [];
+                data.forEach(doc => {
+                    cityList.push({name: doc.data().name, id: doc.data().id});
+                });
+                return res.json(cityList);
+        })
+        .catch((err) => console.error());
 }

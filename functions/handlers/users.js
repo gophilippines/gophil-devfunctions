@@ -123,7 +123,7 @@ exports.logIn = (req, res) => {
       if (err.code === "auth/wrong-password") {
         return res
           .status(403)
-          .json({ General: "Incorrect Credentials, Please Try Again" });
+          .json({ general: "Incorrect Credentials, Please Try Again" });
       } else return res.status(500).json({ Error: err.code });
     });
 };
@@ -144,7 +144,7 @@ exports.uploadImage = (req, res) => {
         return res.status(400).json({ Error: "Wrong File Type Submitted. "});
     }
     const imageExt = filename.split(".")[filename.split(".").length - 1];
-    imageFN = `${Math.round(Math.random() * 1000000000)}.${imageExt}`;
+    imageFN = `profile_${Math.round(Math.random() * 100000000000000)}.${imageExt}`;
     const filePath = path.join(os.tmpdir(), imageFN);
     imageUploaded = { filePath, mimetype };
     file.pipe(fs.createWriteStream(filePath));
