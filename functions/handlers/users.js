@@ -41,11 +41,6 @@ exports.signUp = (req, res) => {
   const { valid, errors } = validateSignUpData(newUser);
   if (!valid) return res.status(400).json(errors);
 
-  /*firebase.auth().createUserWithEmailAndPassword(newUser.email_address, newUser.password)
-        .then(data => {
-            return res.status(201).json({ message: `User ${data.user.uid} Signed up Successfully.`})
-        })*/
-
   let token, userKey, noImg = 'no-img.png';
 
   main
