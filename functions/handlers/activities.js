@@ -4,9 +4,11 @@ const config = require("../util/config");
 
 const { validateCityID } = require("../util/validators");
 
+const activityCollection = main.collection('activity');
+const cityCollection = main.collection('city');
+
 exports.showActivities = (req, res) => {
-    main
-        .collection('activity')
+    activityCollection
         .orderBy('dateCreated', 'desc')
         .get()
         .then(data => {
@@ -32,7 +34,7 @@ exports.addActivity = (req, res) => {
         return res.status(400).json({ activity : 'Address must not be empty.'});
     }
 
-    let id, noImg = 'no-img.png';
+    let id, noImg = 'default-img.png';
 
     const createActivity = {
         city_id: req.query.id,
@@ -51,13 +53,12 @@ exports.addActivity = (req, res) => {
     const { valid, errors } = validateCityID(createActivity);
     if (!valid) return res.status(400).json(errors);
 
-    main.collection('city').where('id', '==', req.query.id).get()
+    cityCollection.where('id', '==', req.query.id).get()
         .then(snapshot => {
             if(snapshot.empty){
                 return res.status(404).json({ city_id: 'Not Found'});
             } else {
-                main
-                 .collection('activity')
+                activityCollection
                  .add(createActivity)
                  .then(doc => {
                     id = `${doc.id}`;
@@ -96,8 +97,7 @@ exports.updateActivity = (req, res) => {
     };
     let sid = req.body.id;
 
-     main.collection('activity')
-         .where('id', '==', sid).get()
+    activityCollection.where('id', '==', sid).get()
          .then(doc => {
             return main.doc(`/activity/${sid}`).update( updatedActivity );
             })
@@ -110,29 +110,30 @@ exports.updateActivity = (req, res) => {
          })
 }
 
-exports.showAllActivities = (req, res) => {
+exports.showRandomActivities = (req, res) => {
 
     if(!req.query.id)
     {
-        main
-        .collection('activity')
+        activityCollection
         .orderBy('dateCreated', 'desc')
         .get()
         .then(data => {
-             let activityData = [];
+             let activityData = [], randActivity = [];
              data.forEach(doc => {
                  activityData.push({
-                    id: doc.id,
                     ...doc.data()
                  });
              });
-             return res.json(activityData);
+             for (let i = 0; i < 4; i++) {
+                 let x = Math.round(Math.random() * activityData.length) - 1;
+                randActivity.push(activityData[x]);
+             }
+             return res.json(randActivity);
         })
 
     } else {
 
-        main
-            .collection('activity').where('id', '==', req.query.id).get()
+        activityCollection.where('id', '==', req.query.id).get()
             .then(snapshot => {
                  if(snapshot.empty){
                     return res.status(404).json({ ID: 'Not Found'});
@@ -158,20 +159,17 @@ exports.showActivitiesbyID = (req, res) => {
         return res.status(400).json({ id: 'ID Required.'});
     } else {
 
-        main
-            .collection('activity').where('id', '==', req.query.id).get()
+        activityCollection.where('id', '==', req.query.id).get()
             .then(snapshot => {
                  if(snapshot.empty){
                     return res.status(404).json({ id: 'Not Found'});
                 }
-
+                
                 let activityData = [];
                 snapshot.forEach(doc => {
-                    activityData.push({
-                       ...doc.data()
-                    });
+                    let activityData = doc.data();
+                    return res.json(activityData);
                 });
-                return res.json(activityData);
         })
         .catch((err) => console.error());
     }
@@ -179,13 +177,11 @@ exports.showActivitiesbyID = (req, res) => {
 
 exports.showActivitiesbyCityID = (req, res) => {
 
-        main
-            .collection('activity').where('city_id', '==', req.query.id).get()
+        activityCollection.where('city_id', '==', req.query.id).get()
             .then(snapshot => {
                  if(snapshot.empty){
                     return res.status(404).json({ city_id: 'No Available Activity on this City'});
                 }
-
                 let activityData = [];
                 snapshot.forEach(doc => {
                     activityData.push({
@@ -197,9 +193,8 @@ exports.showActivitiesbyCityID = (req, res) => {
         .catch((err) => console.error());
 }
 
-exports.showRecommended = (req, res) => {
-        main
-            .collection('activity').where('recommended', '==', true).get()
+exports.showRecommendedActivity = (req, res) => {
+        activityCollection.where('recommended', '==', true).get()
             .then(snapshot => {
                  if(snapshot.empty){
                     return res.status(404).json({ recommended: 'No Recommended Activity Available'});
@@ -208,13 +203,105 @@ exports.showRecommended = (req, res) => {
                 let activityData = [];
                 snapshot.forEach(doc => {
                     activityData.push({
-                       id: `${req.query.id}`,
                        ...doc.data()
                     });
                 });
                 return res.json(activityData);
         })
         .catch((err) => console.error());
+}
+
+exports.getStarRating = (req, res) => {
+
+    if(req.body.comment.trim() === '') {
+        return res.status(400).json({ comment : 'Comment must not be empty.'});
+    }
+
+    const createReview = {
+        id: '',
+        activityID: req.query.id,
+        comment: req.body.comment,
+        email: req.body.email,
+        name: req.body.name,
+        dateCreated: new Date().toISOString(),
+        rate: req.body.rate
+    };
+
+    main.collection('starRating')
+        .add(createReview)
+        .then(doc => {
+            id = `${doc.id}`;
+            res.json({ message: `${doc.id} Review successfully added` });
+            main.doc(`/starRating/${doc.id}`).update({ id });
+        })
+        .catch(err => {
+            res.status(500).json({ error: 'Something went Wrong'});
+            console.error(err);
+        })
+}
+
+exports.updateStarRating = (req, res) => {    
+    let rating = 0, ratingList = [], totalRatingCount;
+
+    main.collection('starRating').where('activityID', '==', req.query.id).get()
+        .then( doc => {
+            doc.forEach(doc => {
+                ratingList.push( doc.data().rate );
+            });
+            for ( let i = 0; i < ratingList.length; i++) {
+                rating+=ratingList[i];
+            }
+            rating /= ratingList.length;
+            rating = parseFloat(parseFloat(rating).toFixed(2));
+            totalRatingCount = ratingList.length;
+            return res.json(rating);
+        })
+        .then( doc => {
+            return main.doc(`/activity/${req.query.id}`).update({ rating, totalRatingCount });
+        })
+}
+
+exports.deleteActivity = (req, res) => {
+    if(!req.query.id)
+    {
+        return res.status(400).json({ id: 'ID Required.'});
+    } else {
+       activityCollection.where('id', '==', req.params.id).get()
+            .then( doc => {
+                if (!doc.exists) {
+                    return res.json({ id: 'Activity not Found'});
+                }
+                else {
+                    return doc.delete();
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                return res.status(500).json({ error: err.code});
+            })
+    }
+}
+
+exports.showActivitiesComments = (req, res) => {
+    if(!req.query.id)
+    {
+        return res.status(400).json({ id: 'ID Required.'});
+    } else {
+
+        main.collection('starRating').where('activityID', '==', req.query.id).get()
+            .then(snapshot => {
+                 if(snapshot.empty){
+                    return res.status(404).json({ comment: 'No Comments Available'});
+                }
+                
+                let commentData = [];
+                snapshot.forEach(doc => {
+                    commentData.push({name: doc.data().name, id: doc.data().id, rate: doc.data().rate, comment: doc.data().comment, dateCreated: doc.data().dateCreated})
+                });
+                return res.json(commentData);
+        })
+        .catch((err) => console.error());
+    }
 }
 
 exports.uploadActivityImage = (req, res) => {
@@ -248,7 +335,7 @@ exports.uploadActivityImage = (req, res) => {
             }
         })
         .then(() => {
-          const imageURL = `https://firebasestorage.googleapis.com/v0/b/${config.storageBucket}/o/${imageFN}?alt=media`;
+          const imageURL = `https://firebasestorage.googleapis.com/v0/b/${config.storageBucket}/o/activities%2F${imageFN}?alt=media`;
           return main.doc(`/activity/${req.headers.id}`).update({ imageURL, dateModified: new Date().toISOString() });
         })
         .then(() => {

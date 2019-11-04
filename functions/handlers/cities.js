@@ -1,4 +1,8 @@
-const { main } = require('../util/admin');
+const { main, admin } = require('../util/admin');
+
+const config = require("../util/config");
+
+const cityCollection = main.collection('city');
 
 exports.addCity = (req, res) => {
     if(req.body.name.trim() === '') {
@@ -11,23 +15,24 @@ exports.addCity = (req, res) => {
         return res.status(400).json({ city : 'Location must not be empty.'});
     }
 
-    let id;
+    let id, location, noImg = 'default-img.png' , loc = req.body.location, lat = loc.split(', ')[0], lng = loc.split(', ')[1];
 
     const createCity = {
         id: "",
-        location: req.body.location,
+        location: new admin.firestore.GeoPoint(parseFloat(req.body.location.split(", ")[0]), parseFloat(req.body.location.split(", ")[1])),
         details: req.body.details,
         name: req.body.name,
         createdBy: req.user.username,
+        imageURL: `https://firebasestorage.googleapis.com/v0/b/${config.storageBucket}/o/${noImg}?alt=media`,
         dateCreated: new Date().toISOString(),
         dateModified: new Date().toISOString()
     };
 
-    main
-         .collection('city')
+    cityCollection
          .add(createCity)
          .then(doc => {
             id = `${doc.id}`;
+            //location = new main.firestore.Geopoint(lat, lng);
             res.json({ message: `${doc.id} City successfully added` });
             return main.doc(`/city/${doc.id}`).update({ id });
             })
@@ -58,7 +63,7 @@ exports.updateCity = (req, res) => {
     };
     let sid = req.body.id;
 
-     main.collection('city')
+     cityCollection
          .where('id', '==', sid).get()
          .then(doc => {
             //updatedcity.dateCreated = sid.dateCreated;
@@ -77,42 +82,43 @@ exports.showCityDetails = (req, res) => {
 
     if(!req.query.id)
     {
-        main
-        .collection('city')
-        .orderBy('dateCreated', 'desc')
-        .get()
-        .then(data => {
-             let cityData = [];
-             data.forEach(doc => {
-                 cityData.push({
-                    ...doc.data()
-                 });
-             });
-             return res.json(cityData);
-        })
+       return res.status(400).json({ message: 'ID Required'});
     } else {
-        main
-            .collection('city').where('id', '==', req.query.id).get()
+        cityCollection.where('id', '==', req.query.id).get()
             .then(snapshot => {
                  if(snapshot.empty){
                     return res.status(404).json({ id: 'Not Found'});
                 }
-
-                let cityData = [];
                 snapshot.forEach(doc => {
-                    cityData.push({
-                       ...doc.data()
-                    });
+                    let cityData = doc.data();
+                    return res.json(cityData);
                 });
-                return res.json(cityData);
+                
         })
         .catch((err) => console.error());
     }
 }
 
+exports.showRecommendedCity = (req, res) => {
+    cityCollection.where('recommended', '==', true).get()
+        .then(snapshot => {
+             if(snapshot.empty){
+                return res.status(404).json({ recommended: 'No Recommended City Available'});
+            }
+
+            let cityData = [];
+            snapshot.forEach(doc => {
+                cityData.push({
+                   ...doc.data()
+                });
+            });
+            return res.json(cityData);
+    })
+    .catch((err) => console.error());
+}
+
 exports.showCityList = (req, res) => {
-    main
-            .collection('city').get()
+    cityCollection.get()
             .then(data => {
                  if(data.empty){
                     return res.status(404).json({ id: 'Not Found'});

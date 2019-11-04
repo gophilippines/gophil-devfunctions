@@ -109,14 +109,17 @@ exports.logIn = (req, res) => {
   const { valid, errors } = validateLoginData(userLogin);
   if (!valid) return res.status(400).json(errors);
 
+  let uid;
+
   firebase
     .auth()
     .signInWithEmailAndPassword(userLogin.email_address, userLogin.password)
     .then(data => {
+      uid = data.user.uid;
       return data.user.getIdToken();
     })
     .then(token => {
-      return res.json({ token });
+      return res.json({ token, uid });
     })
     .catch(err => {
       console.error(err);
@@ -127,6 +130,27 @@ exports.logIn = (req, res) => {
       } else return res.status(500).json({ Error: err.code });
     });
 };
+
+exports.showUserbyID = (req, res) => {
+
+  if(!req.query.id)
+  {
+      return res.status(400).json({ id: 'ID Required.'});
+  } else {
+
+      main.collection('userList').where('userKey', '==', req.query.id).get()
+          .then(snapshot => {
+               if(snapshot.empty){
+                  return res.status(404).json({ id: 'Not Found'});
+              }
+              snapshot.forEach(doc => {
+                  let userData = doc.data();
+                  return res.json(userData);
+              });
+      })
+      .catch((err) => console.error());
+  }
+}
 
 exports.uploadImage = (req, res) => {
   const busBoy = require("busboy");
