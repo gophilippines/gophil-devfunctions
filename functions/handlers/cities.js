@@ -56,7 +56,7 @@ exports.updateCity = (req, res) => {
 
     const updatedcity = {
         id: req.body.id,
-        location: req.body.location,
+        //location: new admin.firestore.GeoPoint(parseFloat(req.body.location.split(", ")[0]), parseFloat(req.body.location.split(", ")[1])),
         name: req.body.name,
         updatedBy: req.user.username,
         dateModified: new Date().toISOString(),
@@ -76,6 +76,30 @@ exports.updateCity = (req, res) => {
              res.status(500).json({ error: 'Something went Wrong'});
              console.error(err);
          })
+}
+
+exports.deleteCity = (req, res) => {
+    //if(!req.query.id)
+    //{
+    //    return res.status(400).json({ id: 'ID Required.'});
+    //} else {
+       //activityCollection.where('id', '==', req.params.id).get()
+        const cityDel = main.doc(`/city/${req.params.id}`);
+        cityDel.get()
+            .then( doc => {
+                if (!doc.exists) {
+                    return res.json({ id: `City ${req.params.id} not Found.`});
+                }
+                else {
+                    cityDel.delete();
+                    return res.json({ id: 'City Deleted.'})
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                return res.status(500).json({ error: err.code});
+            })
+    //}
 }
 
 exports.showCityDetails = (req, res) => {

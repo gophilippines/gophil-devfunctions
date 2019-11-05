@@ -262,24 +262,27 @@ exports.updateStarRating = (req, res) => {
 }
 
 exports.deleteActivity = (req, res) => {
-    if(!req.query.id)
-    {
-        return res.status(400).json({ id: 'ID Required.'});
-    } else {
-       activityCollection.where('id', '==', req.params.id).get()
+    //if(!req.query.id)
+    //{
+    //    return res.status(400).json({ id: 'ID Required.'});
+    //} else {
+       //activityCollection.where('id', '==', req.params.id).get()
+        const activityDel = main.doc(`/activity/${req.params.id}`);
+        activityDel.get()
             .then( doc => {
                 if (!doc.exists) {
-                    return res.json({ id: 'Activity not Found'});
+                    return res.json({ id: `Activity ${req.params.id} not Found.`});
                 }
                 else {
-                    return doc.delete();
+                    activityDel.delete();
+                    return res.json({ id: 'Activity Deleted.'})
                 }
             })
             .catch(err => {
                 console.error(err);
                 return res.status(500).json({ error: err.code});
             })
-    }
+    //}
 }
 
 exports.showActivitiesComments = (req, res) => {
@@ -335,8 +338,8 @@ exports.uploadActivityImage = (req, res) => {
             }
         })
         .then(() => {
-          const imageURL = `https://firebasestorage.googleapis.com/v0/b/${config.storageBucket}/o/activities%2F${imageFN}?alt=media`;
-          return main.doc(`/activity/${req.headers.id}`).update({ imageURL, dateModified: new Date().toISOString() });
+          const imageURL = `https://firebasestorage.googleapis.com/v0/b/${config.storageBucket}/o/${imageFN}?alt=media`;
+          return main.doc(`/activity/${req.params.id}`).update({ imageURL, dateModified: new Date().toISOString() });
         })
         .then(() => {
             return res.json({ image: 'Image Uploaded Successfully' });
