@@ -155,3 +155,48 @@ exports.showCityList = (req, res) => {
         })
         .catch((err) => console.error());
 }
+
+exports.uploadCityImage = (req, res) => {
+    const busBoy = require("busboy");
+    const path = require("path");
+    const os = require("os");
+    const fs = require("fs");
+  
+    const busboy = new busBoy({ headers: req.headers });
+  
+    let imageFN,
+      imageUploaded = {};
+  
+    busboy.on("file", (fieldname, file, filename, encoding, mimetype) => {
+      if(mimetype !== 'image/jpeg' && mimetype !== 'image/png') {
+          return res.status(400).json({ Error: "Wrong File Type Submitted. "});
+      }
+      const imageExt = filename.split(".")[filename.split(".").length - 1];
+      imageFN = `activity_${Math.round(Math.random() * 100000000000000)}.${imageExt}`;
+      const filePath = path.join(os.tmpdir(), imageFN);
+      imageUploaded = { filePath, mimetype };
+      file.pipe(fs.createWriteStream(filePath));
+    });
+  
+    busboy.on("finish", () => {
+      admin
+        .storage().bucket().upload(imageUploaded.filePath, {
+            resumable: false,
+            metadata: {
+                contentType: imageUploaded.mimetype
+            }
+        })
+        .then(() => {
+          const imageURL = `https://firebasestorage.googleapis.com/v0/b/${config.storageBucket}/o/${imageFN}?alt=media`;
+          return main.doc(`/city/${req.params.id}`).update({ imageURL, dateModified: new Date().toISOString() });
+        })
+        .then(() => {
+            return res.json({ image: 'Image Uploaded Successfully' });
+        })
+        .catch(err => {
+            console.error(err);
+            return res.status(500).json({ error: err.code });
+        })
+    });
+    busboy.end(req.rawBody);
+  };
