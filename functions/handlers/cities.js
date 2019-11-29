@@ -79,11 +79,6 @@ exports.updateCity = (req, res) => {
 }
 
 exports.deleteCity = (req, res) => {
-    //if(!req.query.id)
-    //{
-    //    return res.status(400).json({ id: 'ID Required.'});
-    //} else {
-       //activityCollection.where('id', '==', req.params.id).get()
         const cityDel = main.doc(`/city/${req.params.id}`);
         cityDel.get()
             .then( doc => {

@@ -7,6 +7,7 @@ const { showUserList, signUp, logIn, uploadImage, showUserbyID } = require('./ha
 const { addActivity, showActivities, updateActivity, showActivitiesbyID, showRecommendedActivity, deleteActivity, uploadActivityImage, showActivitiesbyCityID, getStarRating, updateStarRating, showActivitiesComments, showRandomActivities } = require('./handlers/activities');
 const { addTransportation, showTransportation, updateTransportation, showTransportationbyID, showRecommendedTransportation, deleteTransportation, uploadTransportationImage, showTransportationbyCityID } = require('./handlers/transportation');
 const { addCity, showCityDetails, showCityList, updateCity, showRecommendedCity, deleteCity, uploadCityImage } = require('./handlers/cities');
+const { addBooking, deleteBooking, showAllBooking } = require('./handlers/booking');
 
 const FBAuth = require('./util/fbAuth');
 
@@ -30,6 +31,12 @@ app.post('/activityImageUpload/:id', FBAuth, uploadActivityImage);
 app.post('/activityRating', getStarRating);
 app.get('/updateRating', updateStarRating);
 app.get('/showComments', showActivitiesComments);
+
+//Bookings
+app.get('/bookingList', FBAuth, showAllBooking);
+app.post('/addBooking', addBooking);
+//app.put('/updateCityBooking', FBAuth, updateBooking);
+app.delete('/deleteBooking/:id', FBAuth, deleteBooking);
 
 //City
 app.get('/cityById', showCityDetails);

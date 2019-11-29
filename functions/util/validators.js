@@ -54,3 +54,14 @@ exports.validateCityID = (data) => {
         valid: Object.keys(errors).length === 0 ? true : false
     }
 }
+
+exports.validateActivityID = (data) => {
+    let errors = {};
+
+    if(isEmpty(data.activityID)) errors.activityID = 'Activity ID Required';
+
+    return {
+        errors, 
+        valid: Object.keys(errors).length === 0 ? true : false
+    }
+}

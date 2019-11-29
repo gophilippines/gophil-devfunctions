@@ -90,7 +90,7 @@ exports.updateActivity = (req, res) => {
         address: req.body.address,
         details: req.body.details,
         name: req.body.name,
-        price: req.body.price,
+        price: parseInt(req.body.price),
         updatedBy: req.user.username,
         recommended: Boolean(req.body.recommended),
         dateModified: new Date().toISOString()
